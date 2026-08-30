@@ -1,0 +1,15 @@
+services:
+  sms-webhook:
+    build: .
+    container_name: sms-webhook-receiver
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATA_DIR=/app/data
+    ports:
+      - "${PORT:-8322}:8322"
+    volumes:
+      - ./data:/app/data
+    # SSE 广播是进程内状态，请勿扩容多副本
+    deploy:
+      replicas: 1

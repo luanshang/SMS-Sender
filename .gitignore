@@ -1,0 +1,23 @@
+# ===== 密钥与数据（切勿上传）=====
+.env
+data/
+*.db
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# ===== 本地测试产物 =====
+server.log
+*.log
+payload*.json
+*.out
+
+# ===== 编辑器/系统 =====
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

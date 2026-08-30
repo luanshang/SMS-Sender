@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMS Board · 短信面板</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --card: rgba(30, 41, 59, .72);
+    --border: rgba(148, 163, 184, .16);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --code: #fbbf24;
+    --ok: #34d399;
+    --bad: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1e3a5f 0%, transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, #312e81 0%, transparent 55%), var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px clamp(12px, 4vw, 40px) 60px;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    max-width: 860px; margin: 0 auto 18px;
+  }
+  h1 { font-size: 22px; letter-spacing: .5px; }
+  h1 small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
+            background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.on  { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.off { background: var(--bad); }
+  .tools { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  input, button {
+    font: inherit; font-size: 13px; color: var(--text);
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px;
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+  button { cursor: pointer; transition: .15s; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; backdrop-filter: blur(8px);
+    animation: slidein .25s ease;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: rgba(56, 189, 248, .45); }
+  @keyframes slidein { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  .meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
+  .sender { font-weight: 600; font-size: 15px; }
+  .sender .name { color: var(--accent); }
+  .num  { color: var(--muted); font-size: 12.5px; }
+  .time { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .badges { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; }
+  .badge.code { color: var(--code); border-color: rgba(251, 191, 36, .4); font-weight: 600; }
+  .content { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+  .content .c {
+    color: var(--code); font-weight: 700; letter-spacing: 1px; font-size: 15px;
+    background: rgba(251, 191, 36, .12); border-radius: 4px; padding: 0 3px;
+  }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+  .empty .big { font-size: 40px; margin-bottom: 12px; }
+  .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; line-height: 1.8; }
+  code { background: rgba(148, 163, 184, .15); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+  .cnt { font-size: 12px; color: var(--muted); }
+  @media (max-width: 620px) { .time { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>SMS Board<small>短信接收面板</small></h1>
+  <span class="status"><span class="dot" id="dot"></span><span id="conn">连接中…</span></span>
+  <span class="cnt" id="cnt"></span>
+  <div class="tools">
+    <input id="filter" placeholder="搜索号码 / 内容" />
+    <input id="token" placeholder="Token(留空用 ?token=)" />
+    <button id="clear" title="仅清空当前页面显示（不影响服务端数据）">清屏</button>
+  </div>
+</header>
+
+<main id="list">
+  <div class="empty"><div class="big">📮</div>还没有收到短信<br><span class="hint">等待 SmsForwarder 推送…</span></div>
+</main>
+<p class="hint">实时模式：SSE 自动推送 · 接收端点 <code>POST /v1/sms/receive</code> · 历史 <code>/api/messages</code></p>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const listEl = $("list");
+let lastId = 0;
+let sse = null;
+
+// ---------- token ----------
+function getToken() {
+  const fromUrl = new URLSearchParams(location.search).get("token");
+  if (fromUrl) { localStorage.setItem("token", fromUrl); return fromUrl; }
+  return localStorage.getItem("token") || "";
+}
+let TOKEN = getToken();
+$("token").value = TOKEN;
+$("token").addEventListener("change", () => { TOKEN = $("token").value.trim(); localStorage.setItem("token", TOKEN); restart(); });
+
+// ---------- 渲染 ----------
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+function hlCode(text) {
+  return esc(text).replace(/(?<!\d)\d{4,8}(?!\d)/g, m => `<span class="c">${m}</span>`);
+}
+function card(item) {
+  const name = item.contact_name ? `<span class="name">${esc(item.contact_name)}</span> ` : "";
+  const badges = [];
+  if (item.code) badges.push(`<span class="badge code">验证码 ${esc(item.code)}</span>`);
+  if (item.sim_slot) badges.push(`<span class="badge">卡槽 ${esc(item.sim_slot)}</span>`);
+  if (item.phone_area) badges.push(`<span class="badge">${esc(item.phone_area)}</span>`);
+  if (item.device_name) badges.push(`<span class="badge">📱 ${esc(item.device_name)}</span>`);
+  const div = document.createElement("div");
+  div.className = "card";
+  div.dataset.id = item.id ?? "";
+  div.dataset.sender = (item.from_number || item.sender || "").toLowerCase();
+  div.dataset.content = (item.content || "").toLowerCase();
+  div.innerHTML = `
+    <div class="meta">
+      <span class="sender">${name}<span class="num">${esc(item.from_number)}</span></span>
+      <span class="time">${esc(item.receive_time || item.created_at || "")}</span>
+    </div>
+    <div class="badges">${badges.join("")}</div>
+    <div class="content">${hlCode(item.content)}</div>`;
+  return div;
+}
+
+// ---------- 过滤 ----------
+function applyFilter() {
+  const kw = $("filter").value.trim().toLowerCase();
+  document.querySelectorAll(".card").forEach(el => {
+    const hit = !kw || el.dataset.sender.includes(kw) || el.dataset.content.includes(kw);
+    el.style.display = hit ? "" : "none";
+  });
+}
+$("filter").addEventListener("input", applyFilter);
+
+// ---------- 加载历史 ----------
+async function loadHistory(first = true) {
+  try {
+    const r = await fetch(`/api/messages?limit=50&token=${encodeURIComponent(TOKEN)}`);
+    if (r.status === 401) { setConn("Token 错误", false); return; }
+    const data = await r.json();
+    const items = data.items || [];
+    if (first) {
+      // 历史为 DESC（最新在前），直接按序追加，保证最新显示在最上方
+      lastId = items.reduce((m, it) => Math.max(m, Number(it.id) || 0), lastId);
+      listEl.innerHTML = "";
+      items.forEach(it => listEl.appendChild(card(it)));
+    } else {
+      // 增量补漏：仅插入 id 大于当前 lastId 的新消息（SSE 断线恢复用）
+      items.slice().reverse().forEach(it => {
+        const id = Number(it.id);
+        if (id && id > lastId) { prepend(it, true); lastId = id; }
+      });
+    }
+    if (data.total !== undefined) $("cnt").textContent = `共 ${data.total} 条`;
+    setConn("已连接", true);
+  } catch (e) { setConn("网络错误", false); }
+}
+
+// ---------- 追加新消息 ----------
+function prepend(item, silent) {
+  const id = Number(item.id);
+  if (id && id <= lastId) return; // 去重
+  if (id) lastId = id;
+  const old = listEl.querySelector(`[data-id="${id}"]`);
+  if (old) old.remove();
+  const firstCard = listEl.querySelector(".card");
+  if (firstCard) listEl.insertBefore(card(item), firstCard);
+  else listEl.replaceChildren(card(item));
+  if (!silent) beep();
+  applyFilter();
+  document.title = `(${item.code ? "🔑 " : "📩 "}) SMS Board`;
+  setTimeout(() => { document.title = "SMS Board"; }, 4000);
+}
+
+// ---------- SSE 实时 ----------
+function restart() {
+  if (sse) sse.close();
+  loadHistory(true);
+  sse = new EventSource(`/api/stream?token=${encodeURIComponent(TOKEN)}`);
+  sse.onopen = () => setConn("实时连接中", true);
+  sse.onerror = () => { setConn("实时断开，5s 后重连…", false); sse.close(); setTimeout(restart, 5000); };
+  sse.onmessage = (e) => { try { prepend(JSON.parse(e.data), false); } catch (_) {} };
+}
+function setConn(text, on) {
+  $("conn").textContent = text;
+  $("dot").className = "dot " + (on ? "on" : "off");
+}
+
+// ---------- 提示音（WebAudio 蜂鸣） ----------
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    o.start(); o.stop(ctx.currentTime + 0.18);
+  } catch (_) {}
+}
+
+$("clear").addEventListener("click", () => { lastId = 0; listEl.innerHTML = '<div class="empty"><div class="big">📮</div>已清屏（服务端数据仍在）</div>'; });
+
+restart();
+setInterval(() => { if (!sse || sse.readyState === EventSource.CLOSED) loadHistory(false); }, 15000);
+</script>
+</body>
+</html>

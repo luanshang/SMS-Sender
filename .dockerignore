@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+data/
+.env
+.uv-cache
+.uv-python
+test_*.py
+payload*.json
+sse*.txt
+sec.txt
+envcheck.txt
+server.log
