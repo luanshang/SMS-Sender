@@ -40,6 +40,14 @@ const AVATAR_COLORS = [
   "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef",
 ];
 
+/* 平面线性 SVG 图标（stroke 风格，跟随 currentColor） */
+const STAT_ICONS = {
+  inbox: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+  today: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  week: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  code: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+};
+
 /* ---------- 工具 ---------- */
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
@@ -384,10 +392,10 @@ createApp({
 
     /* ===== 派生数据 ===== */
     const statCards = computed(() => [
-      { icon: "📥", label: "总条数", value: formatNum(stats.value?.total), color: "#60a5fa" },
-      { icon: "🗓️", label: "今日", value: formatNum(stats.value?.today), color: "#34d399" },
-      { icon: "📆", label: "近 7 天", value: formatNum(stats.value?.week), color: "#a78bfa" },
-      { icon: "🔑", label: "验证码", value: formatNum(stats.value?.code_count), color: "#fbbf24" },
+      { icon: STAT_ICONS.inbox, label: "总条数", value: formatNum(stats.value?.total), color: "var(--accent)" },
+      { icon: STAT_ICONS.today, label: "今日", value: formatNum(stats.value?.today), color: "var(--ok)" },
+      { icon: STAT_ICONS.week, label: "近 7 天", value: formatNum(stats.value?.week), color: "var(--accent-2)" },
+      { icon: STAT_ICONS.code, label: "验证码", value: formatNum(stats.value?.code_count), color: "var(--mark-text)" },
     ]);
 
     const topSenders = computed(() => (stats.value?.senders || []).slice(0, 6));

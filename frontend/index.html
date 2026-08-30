@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250603" />
+<link rel="stylesheet" href="/static/style.css?v=20250605" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -39,7 +39,7 @@
   <!-- ===== 统计面板 ===== -->
   <section class="stats" aria-label="统计">
     <div class="stat" v-for="sc in statCards" :key="sc.label">
-      <div class="stat-icon" aria-hidden="true">{{ sc.icon }}</div>
+      <div class="stat-icon" :style="{ color: sc.color }" v-html="sc.icon" aria-hidden="true"></div>
       <div class="stat-val">{{ sc.value }}</div>
       <div class="stat-label">{{ sc.label }}</div>
     </div>
@@ -163,6 +163,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250603"></script>
+<script type="module" src="/static/app.js?v=20250605"></script>
 </body>
 </html>
