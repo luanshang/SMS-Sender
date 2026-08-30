@@ -405,7 +405,7 @@ createApp({
       const pool = kw ? messages.value.filter((m) => matchKw(m, kw)) : messages.value;
       const map = new Map();
       for (const m of pool) {
-        const key = m.from_number || m.contact_name || "(发件人)";
+        const key = m.from_number || m.contact_name || "unknown";
         let g = map.get(key);
         if (!g) {
           g = { key, number: m.from_number || "", contact_name: m.contact_name || "", list: [] };
@@ -418,7 +418,7 @@ createApp({
         g.list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
         g.count = g.list.length;
         g.lastTime = g.list[0].receive_time || g.list[0].created_at || "";
-        const label = (g.contact_name || g.number || "发件人").trim();
+        const label = (g.contact_name || g.number || "?").trim();
         g.initial = (Array.from(label)[0] || "?").toUpperCase();
         g.color = colorOf(g.key);
       }
