@@ -1,223 +1,168 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SMS Board · 短信面板</title>
-<style>
-  :root {
-    --bg: #0f172a;
-    --bg2: #1e293b;
-    --card: rgba(30, 41, 59, .72);
-    --border: rgba(148, 163, 184, .16);
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --accent: #38bdf8;
-    --code: #fbbf24;
-    --ok: #34d399;
-    --bad: #f87171;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: radial-gradient(1200px 600px at 80% -10%, #1e3a5f 0%, transparent 60%),
-                radial-gradient(900px 500px at -10% 110%, #312e81 0%, transparent 55%), var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 20px clamp(12px, 4vw, 40px) 60px;
-  }
-  header {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    max-width: 860px; margin: 0 auto 18px;
-  }
-  h1 { font-size: 22px; letter-spacing: .5px; }
-  h1 small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
-  .status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
-            background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-  .dot.on  { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-  .dot.off { background: var(--bad); }
-  .tools { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
-  input, button {
-    font: inherit; font-size: 13px; color: var(--text);
-    background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px;
-    outline: none;
-  }
-  input:focus { border-color: var(--accent); }
-  button { cursor: pointer; transition: .15s; }
-  button:hover { border-color: var(--accent); color: var(--accent); }
-  main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-  .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px 18px; backdrop-filter: blur(8px);
-    animation: slidein .25s ease;
-    transition: border-color .2s;
-  }
-  .card:hover { border-color: rgba(56, 189, 248, .45); }
-  @keyframes slidein { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-  .meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
-  .sender { font-weight: 600; font-size: 15px; }
-  .sender .name { color: var(--accent); }
-  .num  { color: var(--muted); font-size: 12.5px; }
-  .time { color: var(--muted); font-size: 12px; margin-left: auto; }
-  .badges { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-  .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; }
-  .badge.code { color: var(--code); border-color: rgba(251, 191, 36, .4); font-weight: 600; }
-  .content { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
-  .content .c {
-    color: var(--code); font-weight: 700; letter-spacing: 1px; font-size: 15px;
-    background: rgba(251, 191, 36, .12); border-radius: 4px; padding: 0 3px;
-  }
-  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
-  .empty .big { font-size: 40px; margin-bottom: 12px; }
-  .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; line-height: 1.8; }
-  code { background: rgba(148, 163, 184, .15); border-radius: 4px; padding: 0 5px; font-size: 12px; }
-  .cnt { font-size: 12px; color: var(--muted); }
-  @media (max-width: 620px) { .time { margin-left: 0; } }
-</style>
+<title>SMS Board · 短信接收面板</title>
+<link rel="stylesheet" href="/static/style.css" />
+<!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("sb-theme");
+    if (!t) t = "light";
+    document.documentElement.dataset.theme = t;
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
-<header>
-  <h1>SMS Board<small>短信接收面板</small></h1>
-  <span class="status"><span class="dot" id="dot"></span><span id="conn">连接中…</span></span>
-  <span class="cnt" id="cnt"></span>
-  <div class="tools">
-    <input id="filter" placeholder="搜索号码 / 内容" />
-    <input id="token" placeholder="Token(留空用 ?token=)" />
-    <button id="clear" title="仅清空当前页面显示（不影响服务端数据）">清屏</button>
-  </div>
-</header>
+<div id="app" v-cloak>
 
-<main id="list">
-  <div class="empty"><div class="big">📮</div>还没有收到短信<br><span class="hint">等待 SmsForwarder 推送…</span></div>
-</main>
-<p class="hint">实时模式：SSE 自动推送 · 接收端点 <code>POST /v1/sms/receive</code> · 历史 <code>/api/messages</code></p>
-
-<script>
-const $ = (id) => document.getElementById(id);
-const listEl = $("list");
-let lastId = 0;
-let sse = null;
-
-// ---------- token ----------
-function getToken() {
-  const fromUrl = new URLSearchParams(location.search).get("token");
-  if (fromUrl) { localStorage.setItem("token", fromUrl); return fromUrl; }
-  return localStorage.getItem("token") || "";
-}
-let TOKEN = getToken();
-$("token").value = TOKEN;
-$("token").addEventListener("change", () => { TOKEN = $("token").value.trim(); localStorage.setItem("token", TOKEN); restart(); });
-
-// ---------- 渲染 ----------
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-}
-function hlCode(text) {
-  return esc(text).replace(/(?<!\d)\d{4,8}(?!\d)/g, m => `<span class="c">${m}</span>`);
-}
-function card(item) {
-  const name = item.contact_name ? `<span class="name">${esc(item.contact_name)}</span> ` : "";
-  const badges = [];
-  if (item.code) badges.push(`<span class="badge code">验证码 ${esc(item.code)}</span>`);
-  if (item.sim_slot) badges.push(`<span class="badge">卡槽 ${esc(item.sim_slot)}</span>`);
-  if (item.phone_area) badges.push(`<span class="badge">${esc(item.phone_area)}</span>`);
-  if (item.device_name) badges.push(`<span class="badge">📱 ${esc(item.device_name)}</span>`);
-  const div = document.createElement("div");
-  div.className = "card";
-  div.dataset.id = item.id ?? "";
-  div.dataset.sender = (item.from_number || item.sender || "").toLowerCase();
-  div.dataset.content = (item.content || "").toLowerCase();
-  div.innerHTML = `
-    <div class="meta">
-      <span class="sender">${name}<span class="num">${esc(item.from_number)}</span></span>
-      <span class="time">${esc(item.receive_time || item.created_at || "")}</span>
+  <!-- ===== 顶部 ===== -->
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">📨</div>
+      <div>
+        <h1>SMS Board <small>短信接收面板</small></h1>
+        <p class="sub">SmsForwarder → Webhook → 实时面板</p>
+      </div>
     </div>
-    <div class="badges">${badges.join("")}</div>
-    <div class="content">${hlCode(item.content)}</div>`;
-  return div;
-}
+    <div class="top-actions">
+      <span class="pill" :class="connOn ? 'on' : 'off'"><i class="dot"></i>{{ connText }}</span>
+      <button class="icon-btn" title="刷新（重载历史与统计）" @click="refreshAll">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+      </button>
+    </div>
+  </header>
 
-// ---------- 过滤 ----------
-function applyFilter() {
-  const kw = $("filter").value.trim().toLowerCase();
-  document.querySelectorAll(".card").forEach(el => {
-    const hit = !kw || el.dataset.sender.includes(kw) || el.dataset.content.includes(kw);
-    el.style.display = hit ? "" : "none";
-  });
-}
-$("filter").addEventListener("input", applyFilter);
+  <!-- ===== 统计面板 ===== -->
+  <section class="stats" aria-label="统计">
+    <div class="stat" v-for="sc in statCards" :key="sc.label">
+      <div class="stat-icon" aria-hidden="true">{{ sc.icon }}</div>
+      <div class="stat-val">{{ sc.value }}</div>
+      <div class="stat-label">{{ sc.label }}</div>
+    </div>
+  </section>
+  <div v-if="stats && stats.senders && stats.senders.length" class="chips">
+    <span class="chips-label">热门发件人</span>
+    <button v-for="(s, i) in topSenders" :key="s.from_number + '-' + i" class="chip" :title="'筛选：' + (s.from_number || s.contact_name || '未知')" @click="filterKw = s.from_number || s.contact_name">
+      {{ s.contact_name || s.from_number || '未知' }} <b>{{ s.count }}</b>
+    </button>
+  </div>
 
-// ---------- 加载历史 ----------
-async function loadHistory(first = true) {
-  try {
-    const r = await fetch(`/api/messages?limit=50&token=${encodeURIComponent(TOKEN)}`);
-    if (r.status === 401) { setConn("Token 错误", false); return; }
-    const data = await r.json();
-    const items = data.items || [];
-    if (first) {
-      // 历史为 DESC（最新在前），直接按序追加，保证最新显示在最上方
-      lastId = items.reduce((m, it) => Math.max(m, Number(it.id) || 0), lastId);
-      listEl.innerHTML = "";
-      items.forEach(it => listEl.appendChild(card(it)));
-    } else {
-      // 增量补漏：仅插入 id 大于当前 lastId 的新消息（SSE 断线恢复用）
-      items.slice().reverse().forEach(it => {
-        const id = Number(it.id);
-        if (id && id > lastId) { prepend(it, true); lastId = id; }
-      });
-    }
-    if (data.total !== undefined) $("cnt").textContent = `共 ${data.total} 条`;
-    setConn("已连接", true);
-  } catch (e) { setConn("网络错误", false); }
-}
+  <!-- ===== 工具栏 ===== -->
+  <section class="toolbar">
+    <input v-model="filterKw" class="search" type="search" placeholder="🔍 搜索号码 / 联系人 / 内容 / 验证码" />
+    <input v-model="tokenInput" class="token" placeholder="访问 Token（可选）" @change="onTokenChange" />
+    <span class="spacer"></span>
+    <button class="icon-btn" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'" @click="toggleTheme">
+      <svg v-if="theme === 'dark'" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="icon-btn" :class="{ active: soundOn }" :title="soundOn ? '关闭新消息提示音' : '开启新消息提示音'" @click="soundOn = !soundOn">
+      <svg v-if="soundOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
+    <button class="icon-btn" :class="{ active: notifOn }" :title="notifOn ? '关闭桌面通知' : '开启桌面通知'" @click="toggleNotif">
+      <svg v-if="notifOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    </button>
+    <button class="btn danger" @click="showClear = true" title="删除服务端全部短信记录">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      清空数据
+    </button>
+  </section>
 
-// ---------- 追加新消息 ----------
-function prepend(item, silent) {
-  const id = Number(item.id);
-  if (id && id <= lastId) return; // 去重
-  if (id) lastId = id;
-  const old = listEl.querySelector(`[data-id="${id}"]`);
-  if (old) old.remove();
-  const firstCard = listEl.querySelector(".card");
-  if (firstCard) listEl.insertBefore(card(item), firstCard);
-  else listEl.replaceChildren(card(item));
-  if (!silent) beep();
-  applyFilter();
-  document.title = `(${item.code ? "🔑 " : "📩 "}) SMS Board`;
-  setTimeout(() => { document.title = "SMS Board"; }, 4000);
-}
+  <!-- ===== 消息列表 ===== -->
+  <main class="list">
+    <div v-if="loading" class="empty">
+      <div class="big">⏳</div>
+      <p class="hint">正在加载历史消息…</p>
+    </div>
 
-// ---------- SSE 实时 ----------
-function restart() {
-  if (sse) sse.close();
-  loadHistory(true);
-  sse = new EventSource(`/api/stream?token=${encodeURIComponent(TOKEN)}`);
-  sse.onopen = () => setConn("实时连接中", true);
-  sse.onerror = () => { setConn("实时断开，5s 后重连…", false); sse.close(); setTimeout(restart, 5000); };
-  sse.onmessage = (e) => { try { prepend(JSON.parse(e.data), false); } catch (_) {} };
-}
-function setConn(text, on) {
-  $("conn").textContent = text;
-  $("dot").className = "dot " + (on ? "on" : "off");
-}
+    <template v-else>
+      <div v-if="groupList.length === 0" class="empty">
+        <div class="big">{{ total > 0 ? '🔎' : '📭' }}</div>
+        <p><b>{{ total > 0 ? '没有匹配的消息' : '还没有收到短信' }}</b></p>
+        <p class="hint">{{ total > 0 ? '换个关键词试试' : '等待 SmsForwarder 推送…（POST /v1/sms/receive）' }}</p>
+      </div>
 
-// ---------- 提示音（WebAudio 蜂鸣） ----------
-function beep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.12, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    o.start(); o.stop(ctx.currentTime + 0.18);
-  } catch (_) {}
-}
+      <section v-for="g in groupList" :key="g.key" class="group">
+        <header class="group-head" @click="groupOpen[g.key] = !(groupOpen[g.key] ?? true)">
+          <div class="avatar" :style="{ background: g.color }">{{ g.initial }}</div>
+          <div class="g-meta">
+            <div class="g-name">
+              <code class="g-num">{{ g.number || '发件人' }}</code>
+              <span v-if="g.contact_name" class="g-cn">{{ g.contact_name }}</span>
+            </div>
+            <div class="g-sub">{{ g.count }} 条 · {{ g.lastTime || '未知时间' }}</div>
+          </div>
+          <span class="chev" :class="{ open: (groupOpen[g.key] ?? true) }">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </header>
 
-$("clear").addEventListener("click", () => { lastId = 0; listEl.innerHTML = '<div class="empty"><div class="big">📮</div>已清屏（服务端数据仍在）</div>'; });
+        <Transition name="expand">
+          <div v-if="groupOpen[g.key] ?? true" class="messages">
+            <TransitionGroup name="msg">
+              <article v-for="m in g.list" :key="m.id" class="msg">
+                <div class="msg-top">
+                  <div class="badges">
+                    <span v-if="m.code" class="badge code">🔑 {{ m.code }}</span>
+                    <span v-if="m.sim_slot" class="badge">📶 {{ m.sim_slot }}</span>
+                    <span v-if="m.phone_area" class="badge">📍 {{ m.phone_area }}</span>
+                    <span v-if="m.device_name" class="badge">📱 {{ m.device_name }}</span>
+                  </div>
+                  <time>{{ m.receive_time || m.created_at || '' }}</time>
+                </div>
+                <p class="msg-content" v-html="highlight(m.content, m.code)"></p>
+                <div class="msg-actions">
+                  <button v-if="m.code" class="btn mini copy" @click="copyText(m.code, m.id)">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    {{ copiedId === m.id ? '已复制 ✓' : '复制验证码' }}
+                  </button>
+                  <button class="btn mini del" :class="{ confirm: deletingId === m.id }" @click="askDelete(m)">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    {{ deletingId === m.id ? '确认删除？' : '删除' }}
+                  </button>
+                </div>
+              </article>
+            </TransitionGroup>
+          </div>
+        </Transition>
+      </section>
 
-restart();
-setInterval(() => { if (!sse || sse.readyState === EventSource.CLOSED) loadHistory(false); }, 15000);
-</script>
+      <button v-if="hasMore" class="load-more" :disabled="loadingMore" @click="loadMore">
+        {{ loadingMore ? '加载中…' : '加载更早的消息（共 ' + total + ' 条）' }}
+      </button>
+    </template>
+  </main>
+
+  <footer class="foot">
+    <span>实时推送：SSE</span> · <span>接收端点 <code>POST /v1/sms/receive</code></span> · <span>共 {{ total ?? '-' }} 条</span>
+  </footer>
+
+  <!-- ===== 清空确认 ===== -->
+  <Transition name="fade">
+    <div v-if="showClear" class="mask" @click.self="showClear = false">
+      <div class="modal" role="dialog" aria-label="清空确认">
+        <h3>清空全部数据？</h3>
+        <p>将删除服务端存储的 <b>全部 {{ total ?? 0 }} 条</b> 短信记录，此操作<b>无法恢复</b>，且对所有打开的页面生效。</p>
+        <div class="modal-actions">
+          <button class="btn" @click="showClear = false">取消</button>
+          <button class="btn danger" :disabled="clearing" @click="doClear">{{ clearing ? '清空中…' : '确认清空' }}</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ===== Toast ===== -->
+  <Transition name="toast">
+    <div v-if="toast" class="toast">{{ toast }}</div>
+  </Transition>
+</div>
+
+<script type="module" src="/static/app.js"></script>
 </body>
 </html>

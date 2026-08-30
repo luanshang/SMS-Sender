@@ -85,12 +85,31 @@ docker compose up -d --build
 | POST | `/v1/sms/receive` | 接收 webhook（验签/入库/广播） |
 | GET | `/api/messages?limit=&offset=` | 历史记录（需 token） |
 | GET | `/api/stream?token=` | SSE 实时事件流 |
+| GET | `/api/stats` | 统计（总数/今日/近7天/验证码/热门发件人） |
+| DELETE | `/api/messages/{id}` | 删除单条消息（需 token） |
+| DELETE | `/api/messages` | 清空全部消息（需 token） |
 | GET | `/v1/sms/history` | 兼容 sms_server 的历史接口 |
 | GET | `/v1/sms/code?phone_number=` | 按号码查最近验证码 |
 | GET | `/healthz` | 健康检查 |
 | GET | `/` | 前端页面 |
+| GET | `/static/*` | 前端静态资源（style.css / app.js） |
 
-## 五、本地调试
+## 五、前端面板（Vue 3 · 零构建）
+
+前端保持「FastAPI 直接服务静态文件」的极简部署方式（无需 node 构建），
+逻辑用 **Vue 3**（CDN 按 jsdelivr → npmmirror → unpkg 依次加载，兼容国内外网络）重写，
+并新增以下能力：
+
+- 🎨 深色 / 浅色主题切换（默认跟随系统，记忆选择）
+- 🔑 验证码高亮 + 一键复制（含二次音效）
+- 🗂️ 按发件号码/联系人自动分组，组头可折叠
+- 📜 历史消息「加载更多」分页（不再限于最新 50 条）
+- 🗑️ 单条删除（二次确认态）与「清空全部数据」（弹窗确认，SSE 同步所有打开页面）
+- 📊 统计面板：总条数 / 今日 / 近 7 天 / 验证码条数 + 热门发件人快捷筛选
+- 🔔 桌面通知（新验证码弹通知）与提示音开关（验证码双音）
+- 🔍 实时搜索过滤（号码 / 联系人 / 内容 / 验证码），消息进出场动画、玻璃拟态
+
+## 六、本地调试
 
 ```bash
 python -m venv .venv
@@ -107,7 +126,7 @@ python test_send.py --tampered       # 用错误密钥签名，应返回 401
 python e2e.py                        # 端到端自测（含 SSE 实时推送断言）
 ```
 
-## 六、HTTPS 反代（Caddy 示例）
+## 七、HTTPS 反代（Caddy 示例）
 
 ```caddyfile
 sms.example.com {
@@ -122,10 +141,12 @@ Caddy 自动申请证书，SmsForwarder 推送地址填 `https://sms.example.com
 ```
 sms-webhook-receiver/
 ├── backend/
-│   ├── main.py            # FastAPI 应用（接收/验签/SQLite/SSE/静态页）
+│   ├── main.py            # FastAPI 应用（接收/验签/SQLite/SSE/统计/删除/静态资源）
 │   └── requirements.txt
 ├── frontend/
-│   └── index.html         # 自研单页前端（零依赖，轮询+SSE+验证码高亮）
+│   ├── index.html         # 前端骨架 + Vue 3 模板（零构建，FastAPI 直接服务）
+│   ├── style.css          # 深/浅双主题、玻璃拟态、动画、响应式
+│   └── app.js             # Vue 3 应用逻辑（分组/分页/统计/通知/主题等）
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example

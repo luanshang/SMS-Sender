@@ -28,6 +28,7 @@ from urllib.parse import unquote
 
 from fastapi import Body, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 # ---------------------------------------------------------------------------
 # 配置
@@ -43,6 +44,7 @@ ALLOWED_SKEW_MS = 5 * 60 * 1000  # 时间戳允许偏差 ±5 分钟（防重放�
 
 DB_PATH = os.path.join(DATA_DIR, "sms.db")
 FRONTEND_PATH = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
+STATIC_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("sms-webhook")
@@ -156,7 +158,10 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="SMS Webhook Receiver", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="SMS Webhook Receiver", version="1.1.0", lifespan=lifespan)
+
+# 前端静态资源（index.html 引用的 style.css / app.js，无敏感数据、无需 token）
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 # ---------------------------------------------------------------------------
@@ -256,7 +261,7 @@ def receive(
         "receive_time": receive_time,
         "code": code,
     }
-    bus.publish(item)
+    bus.publish({**item, "type": "sms"})
     logger.info("new sms from %s: %s", from_number, content[:60].replace("\n", " "))
     # 响应体包含 ok，供 SmsForwarder 响应关键字判定成功
     return {"status": "ok"}
@@ -287,6 +292,49 @@ def get_code(phone_number: str = Query("", description="按发件号码查询最
     else:
         rows = _query("SELECT * FROM sms WHERE code != '' ORDER BY id DESC LIMIT 10")
     return {"items": rows}
+
+
+# ---------------------------------------------------------------------------
+# 统计 / 管理接口（前端面板用）
+# ---------------------------------------------------------------------------
+@app.get("/api/stats")
+def stats():
+    total = _query("SELECT COUNT(*) AS c FROM sms")[0]["c"]
+    today = _query(
+        "SELECT COUNT(*) AS c FROM sms WHERE created_at >= datetime('now','localtime','start of day')"
+    )[0]["c"]
+    week = _query(
+        "SELECT COUNT(*) AS c FROM sms WHERE created_at >= datetime('now','localtime','-6 days','start of day')"
+    )[0]["c"]
+    code_count = _query("SELECT COUNT(*) AS c FROM sms WHERE code != ''")[0]["c"]
+    senders = _query(
+        "SELECT from_number, contact_name, COUNT(*) AS count FROM sms"
+        " GROUP BY from_number ORDER BY count DESC LIMIT 10"
+    )
+    return {
+        "total": total,
+        "today": today,
+        "week": week,
+        "code_count": code_count,
+        "senders": senders,
+    }
+
+
+@app.delete("/api/messages/{msg_id}")
+def delete_message(msg_id: int):
+    row = _query("SELECT id FROM sms WHERE id = ?", (msg_id,))
+    if not row:
+        raise HTTPException(status_code=404, detail="message not found")
+    _query("DELETE FROM sms WHERE id = ?", (msg_id,))
+    bus.publish({"type": "delete", "id": msg_id})
+    return {"status": "ok"}
+
+
+@app.delete("/api/messages")
+def clear_messages():
+    _query("DELETE FROM sms")
+    bus.publish({"type": "clear"})
+    return {"status": "ok"}
 
 
 # ---------------------------------------------------------------------------
