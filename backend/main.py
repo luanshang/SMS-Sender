@@ -103,12 +103,30 @@ def _insert(sql: str, args: tuple = ()) -> int:
         conn.close()
 
 
-# 验证码提取：4~8 位纯数字（排除手机号等长数字段）
-_CODE_RE = re.compile(r"(?<!\d)\d{4,8}(?!\d)")
+# 验证码提取：
+# 1) 先剥离干扰段（日期 2026-09-01 / 时间 08:50:56 / 带字母前缀 a36005683 / 掩码手机号 159****9996）
+# 2) 优先匹配「验证码/口令/密码/token/code」等关键词后的 4~8 位数字
+# 3) 兜底：取清理后文本中最后一个 4~8 位纯数字
+_CODE_NOISE_RE = re.compile(
+    r"\d{4}[-/年.]\d{1,2}[-/月.]\d{1,2}(?:[日号])?"  # 日期
+    r"|\d{1,2}[:：]\d{2}(?::\d{2})?"                  # 时间
+    r"|[a-zA-Z]\d{4,8}"                               # 带字母前缀（如 a36005683）
+    r"|\d{3}\*+\d{3,4}"                               # 掩码手机号（如 159****9996）
+)
+_CODE_KEYWORD_RE = re.compile(
+    r"(?:验证码|动态码|校验码|安全码|登录码|口令|密码|token|code|pin|otp)"
+    r"\s*[为是:：]*\s*(\d{4,8})",
+    re.IGNORECASE,
+)
+_CODE_BARE_RE = re.compile(r"(?<!\d)\d{4,8}(?!\d)")
 
 
 def extract_code(content: str) -> str:
-    codes = _CODE_RE.findall(content or "")
+    text = _CODE_NOISE_RE.sub(" ", content or "")
+    m = _CODE_KEYWORD_RE.search(text)
+    if m:
+        return m.group(1)
+    codes = _CODE_BARE_RE.findall(text)
     return codes[-1] if codes else ""
 
 
