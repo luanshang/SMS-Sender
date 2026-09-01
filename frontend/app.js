@@ -161,7 +161,7 @@ createApp({
         if (initial) {
           messages.value = data.items || [];
           lastId.value = messages.value.reduce((mx, it) => Math.max(mx, Number(it.id) || 0), 0);
-          ensureDefaultSelection();
+          // 默认不预选号码/发送者，首次进入直接展示全部历史消息。
         } else {
           mergeNewer(data.items || []);
         }
@@ -465,7 +465,7 @@ createApp({
       const map = new Map();
       for (const m of messages.value) {
         const receiver = normalizeReceiverNumber(m.receiver_number);
-        if (!receiver || !m.code || (selectedNumber.value && receiver !== selectedNumber.value)) continue;
+        if (selectedNumber.value && receiver !== selectedNumber.value) continue;
         const sender = String(m.from_number || "").trim();
         if (!sender) continue;
         const item = map.get(sender) || { sender, count: 0, lastId: 0 };
@@ -477,8 +477,10 @@ createApp({
     });
 
     const selectedSenderValue = computed(() => {
-      if (selectedSender.value && senderList.value.some((s) => s.sender === selectedSender.value)) return selectedSender.value;
-      return senderList.value[0]?.sender || "";
+      if (selectedSender.value && senderList.value.some((s) => s.sender === selectedSender.value)) {
+        return selectedSender.value;
+      }
+      return "";
     });
 
     const stackMessages = computed(() => {
@@ -487,8 +489,8 @@ createApp({
         .filter((m) => {
           const receiver = normalizeReceiverNumber(m.receiver_number);
           const sender = String(m.from_number || "").trim();
-          return receiver && m.code && (!selectedNumber.value || receiver === selectedNumber.value)
-            && (!selectedSenderValue.value || sender === selectedSenderValue.value)
+          return (!selectedNumber.value || receiver === selectedNumber.value)
+            && (!selectedSender.value || sender === selectedSender.value)
             && (!kw || matchKw(m, kw));
         })
         .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));

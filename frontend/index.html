@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250617" />
+<link rel="stylesheet" href="/static/style.css?v=20250618" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -125,7 +125,7 @@
         </section>
 
         <section class="stack-section" v-if="stackMessages.length">
-          <div class="stack-hint">点击最上方卡片展开 · 共 {{ stackMessages.length }} 条验证码</div>
+          <div class="stack-hint">点击最上方卡片展开 · 共 {{ stackMessages.length }} 条短信</div>
           <div class="message-stack" :class="{ 'is-hovering': stackMessages.length > 1 }">
             <article v-for="(m, index) in stackMessages.slice(0, 5)" :key="m.id" class="stack-card" :class="['stack-card-' + index, { expanded: isMessageExpanded(m.id) }]" @click="toggleMessage(m.id)">
               <div class="stack-card-summary">
@@ -215,6 +215,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250617"></script>
+<script type="module" src="/static/app.js?v=20250618"></script>
 </body>
 </html>
