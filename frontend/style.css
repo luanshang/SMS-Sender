@@ -149,6 +149,68 @@ input::placeholder { color: var(--muted); opacity: .8; }
 .sidebar-empty { padding: 28px 7px; color: var(--muted); font-size: 12px; text-align: center; }
 .list { min-width: 0; } .content-heading { margin: 0 4px 12px; } .content-heading h2 { font-size: 20px; }
 
+/* ============ 第二级：发送者列表 ============ */
+.sender-panel {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--raise);
+}
+.sender-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sender-panel-head h3 { margin-top: 3px; font-size: 17px; color: var(--text); }
+.sender-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 13px; }
+.sender-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 38px; padding: 8px 12px;
+  border-radius: 11px; background: var(--card-2); color: var(--muted);
+  cursor: pointer; box-shadow: var(--sunken-soft);
+  transition: transform .18s ease, color .18s ease, background .18s ease, box-shadow .2s ease;
+}
+.sender-item:hover { color: var(--accent); transform: translateY(-2px); box-shadow: var(--raise-sm); }
+.sender-item.selected { color: var(--accent); background: var(--grad-soft); box-shadow: var(--raise-sm); }
+.sender-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .75; }
+.sender-number { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.sender-count { font-size: 11px; opacity: .75; }
+
+/* ============ 第三级：垂直卡片堆叠 ============ */
+.stack-section { padding: 3px 0 18px; }
+.stack-hint { color: var(--muted); font-size: 12px; margin: 0 4px 12px; }
+.message-stack {
+  position: relative;
+  min-height: 176px;
+  padding: 8px 0 42px;
+  isolation: isolate;
+}
+.stack-card {
+  position: absolute; left: 0; right: 0; top: 8px;
+  min-height: 82px; padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--raise);
+  cursor: pointer;
+  transform-origin: center top;
+  transition: transform 400ms ease, opacity 400ms ease, box-shadow 400ms ease, top 400ms ease;
+}
+.stack-card-0 { z-index: 30; transform: translateY(0) scale(1); opacity: 1; }
+.stack-card-1 { z-index: 20; transform: translateY(16px) scale(.95); opacity: .8; }
+.stack-card-2 { z-index: 10; transform: translateY(32px) scale(.90); opacity: .6; }
+.stack-card-3 { z-index: 5; transform: translateY(48px) scale(.85); opacity: .45; }
+.stack-card-4 { z-index: 1; transform: translateY(64px) scale(.80); opacity: .3; }
+.message-stack.is-hovering:hover .stack-card-0,
+.stack-card.expanded { transform: translateY(-14px) scale(1.015); box-shadow: var(--raise-lg); }
+.message-stack.is-hovering:hover .stack-card-1 { transform: translateY(30px) scale(.95); opacity: .86; }
+.message-stack.is-hovering:hover .stack-card-2 { transform: translateY(58px) scale(.90); opacity: .72; }
+.message-stack.is-hovering:hover .stack-card-3 { transform: translateY(84px) scale(.85); opacity: .58; }
+.message-stack.is-hovering:hover .stack-card-4 { transform: translateY(108px) scale(.80); opacity: .45; }
+.stack-card-summary { display: flex; align-items: center; gap: 12px; min-height: 28px; }
+.stack-code { color: var(--mark-text); font-family: var(--mono); font-size: 18px; font-weight: 800; letter-spacing: .05em; }
+.stack-card-summary time { margin-left: auto; color: var(--muted); font-size: 11px; }
+.stack-chevron { color: var(--accent); font-size: 11px; font-weight: 700; }
+.stack-card-body { padding-top: 13px; }
+.stack-card-body .msg-actions { margin-top: 12px; }
+.legacy-groups { display: none !important; }
+
 /* 右侧内容扁平融入背景 */
 .list > .group { background: transparent; box-shadow: none; border-radius: 0; animation: none; }
 .list > .group .group-head { padding: 12px 8px 13px; border-radius: 14px; box-shadow: none; gap: 12px; }

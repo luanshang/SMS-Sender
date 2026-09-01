@@ -96,6 +96,8 @@ createApp({
     const lastId = ref(0);
     const filterKw = ref("");
     const selectedNumber = ref("");
+    const selectedSender = ref("");
+    const expandedMessageId = ref(null);
     const connText = ref("连接中…");
     const connOn = ref(false);
     const groupOpen = reactive({});
@@ -159,6 +161,7 @@ createApp({
         if (initial) {
           messages.value = data.items || [];
           lastId.value = messages.value.reduce((mx, it) => Math.max(mx, Number(it.id) || 0), 0);
+          ensureDefaultSelection();
         } else {
           mergeNewer(data.items || []);
         }
@@ -244,6 +247,9 @@ createApp({
       lastId.value = 0;
       total.value = 0;
       hasMore.value = false;
+      selectedNumber.value = "";
+      selectedSender.value = "";
+      expandedMessageId.value = null;
       fetchStats();
       showToast("数据已被清空");
     }
@@ -416,8 +422,31 @@ createApp({
       return [...map.values()].sort((a, b) => b.lastId - a.lastId);
     });
 
+    function ensureDefaultSelection() {
+      if (selectedNumber.value || selectedSender.value) return;
+      const latest = messages.value.find((m) => m.code && normalizeReceiverNumber(m.receiver_number));
+      if (!latest) return;
+      selectedNumber.value = normalizeReceiverNumber(latest.receiver_number);
+      selectedSender.value = String(latest.from_number || "").trim();
+    }
+
     function selectNumber(number) {
       selectedNumber.value = number || "";
+      selectedSender.value = "";
+      expandedMessageId.value = null;
+    }
+
+    function selectSender(sender) {
+      selectedSender.value = sender || "";
+      expandedMessageId.value = null;
+    }
+
+    function toggleMessage(id) {
+      expandedMessageId.value = expandedMessageId.value === id ? null : id;
+    }
+
+    function isMessageExpanded(id) {
+      return expandedMessageId.value === id;
     }
 
     function isGroupOpen(key) {
@@ -427,6 +456,39 @@ createApp({
     function toggleGroup(key) {
       groupOpen[key] = !isGroupOpen(key);
     }
+
+    const senderList = computed(() => {
+      const map = new Map();
+      for (const m of messages.value) {
+        const receiver = normalizeReceiverNumber(m.receiver_number);
+        if (!receiver || !m.code || (selectedNumber.value && receiver !== selectedNumber.value)) continue;
+        const sender = String(m.from_number || "").trim();
+        if (!sender) continue;
+        const item = map.get(sender) || { sender, count: 0, lastId: 0 };
+        item.count += 1;
+        item.lastId = Math.max(item.lastId, Number(m.id) || 0);
+        map.set(sender, item);
+      }
+      return [...map.values()].sort((a, b) => b.lastId - a.lastId);
+    });
+
+    const selectedSenderValue = computed(() => {
+      if (selectedSender.value && senderList.value.some((s) => s.sender === selectedSender.value)) return selectedSender.value;
+      return senderList.value[0]?.sender || "";
+    });
+
+    const stackMessages = computed(() => {
+      const kw = filterKw.value.trim().toLowerCase();
+      return messages.value
+        .filter((m) => {
+          const receiver = normalizeReceiverNumber(m.receiver_number);
+          const sender = String(m.from_number || "").trim();
+          return receiver && m.code && (!selectedNumber.value || receiver === selectedNumber.value)
+            && (!selectedSenderValue.value || sender === selectedSenderValue.value)
+            && (!kw || matchKw(m, kw));
+        })
+        .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    });
 
     const groupList = computed(() => {
       const kw = filterKw.value.trim().toLowerCase();
@@ -486,6 +548,8 @@ createApp({
       tokenInput, onTokenChange,
       connText, connOn, refreshAll,
       filterKw, selectedNumber, numberList, selectNumber,
+      selectedSender, selectedSenderValue, senderList, selectSender,
+      stackMessages, expandedMessageId, toggleMessage, isMessageExpanded,
       loading, loadingMore, hasMore, loadMore,
       groupList, groupOpen, isGroupOpen, toggleGroup,
       highlight, copyText, copiedId,
