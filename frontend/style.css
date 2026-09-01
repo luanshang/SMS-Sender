@@ -84,11 +84,22 @@ button { border: 0; }
 .top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 15px; }
 .logo { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; font-size: 28px; background: var(--grad); color: #fff; box-shadow: var(--raise); animation: floaty 5s ease-in-out infinite; }
+.logo svg { width: 31px; height: 31px; display: block; }
 @keyframes floaty { 50% { transform: translateY(-4px); } }
 h1 { font-size: clamp(22px,3.4vw,30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 h1 small { -webkit-text-fill-color: var(--muted); background: none; font-weight: 500; font-size: 13px; margin-left: 9px; letter-spacing: 0; }
 .sub { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.settings-wrap { position: relative; }
+.settings-btn { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 0; border-radius: var(--radius-sm); background: var(--card); color: var(--muted); box-shadow: var(--raise-sm); cursor: pointer; font-size: 13px; font-weight: 650; transition: color .15s, transform .15s, box-shadow .2s; }
+.settings-btn:hover, .settings-btn.active { color: var(--accent); transform: translateY(-2px); box-shadow: var(--raise-hover); }
+.settings-btn:active { transform: translateY(0); box-shadow: var(--sunken); }
+.settings-menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 20; width: 190px; padding: 10px; background: var(--card); border-radius: 15px; box-shadow: var(--raise-lg); animation: menuIn .16s ease; }
+.settings-title { padding: 5px 9px 8px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.settings-menu-item { width: 100%; display: flex; align-items: center; gap: 9px; padding: 10px 9px; color: var(--muted); background: transparent; border: 0; border-radius: 9px; cursor: pointer; text-align: left; font-size: 12.5px; transition: background .15s, color .15s; }
+.settings-menu-item:hover { color: var(--danger); background: var(--card-2); }
+.danger-item svg { flex: none; }
+@keyframes menuIn { from { opacity: 0; transform: translateY(-5px) scale(.97); } to { opacity: 1; transform: none; } }
 .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; background: var(--card); border-radius: var(--radius-pill); padding: 8px 16px; box-shadow: var(--raise-sm); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
 .pill.on { color: var(--ok); } .pill.off { color: var(--bad); }

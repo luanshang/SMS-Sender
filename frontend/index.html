@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250619" />
+<link rel="stylesheet" href="/static/style.css?v=20250620" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -22,9 +22,11 @@
   <!-- ===== 顶部 ===== -->
   <header class="top">
     <div class="brand">
-      <div class="logo" aria-hidden="true">📨</div>
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 1024 1024" width="30" height="30" xmlns="http://www.w3.org/2000/svg"><path d="M170.666667 170.666667h682.666666a85.333333 85.333333 0 0 1 85.333334 85.333333v512a85.333333 85.333333 0 0 1-85.333334 85.333333H170.666667a85.333333 85.333333 0 0 1-85.333334-85.333333V256a85.333333 85.333333 0 0 1 85.333334-85.333333z" fill="#DCDFE6"/><path d="M272.448 365.653333a32 32 0 0 1 41.962667-9.514666l2.602666 1.642666 176.64 123.648a32 32 0 0 0 33.877334 1.770667l2.816-1.770667 176.64-123.648a32 32 0 0 1 39.146666 50.56l-2.453333 1.877334-176.64 123.648a96 96 0 0 1-105.898667 2.773333l-4.202666-2.773333-176.64-123.648a32 32 0 0 1-7.850667-44.586667z" fill="#323847"/></svg>
+      </div>
       <div>
-        <h1>SMS Board <small>短信接收面板</small></h1>
+        <h1>短信接收面板 <small>SMS Board</small></h1>
         <p class="sub">SmsForwarder → Webhook → 实时面板</p>
       </div>
     </div>
@@ -33,6 +35,19 @@
       <button class="icon-btn" title="刷新（重载历史与统计）" @click="refreshAll">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
       </button>
+      <div class="settings-wrap">
+        <button class="settings-btn" :class="{ active: settingsOpen }" title="设置" @click.stop="settingsOpen = !settingsOpen">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.56V20h-2.4v-.2a1.7 1.7 0 0 0-1-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.6 15a1.7 1.7 0 0 0-1.56-1H6.8v-2.4H7a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1-1.56V5h2.4v.2a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1h.2V14h-.2a1.7 1.7 0 0 0-1.56 1z"/></svg>
+          设置
+        </button>
+        <div v-if="settingsOpen" class="settings-menu" @click.stop>
+          <div class="settings-title">面板设置</div>
+          <button class="settings-menu-item danger-item" @click="showClear = true; settingsOpen = false">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>清空全部数据</span>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -67,10 +82,6 @@
     <button class="icon-btn" :class="{ active: notifOn }" :title="notifOn ? '关闭桌面通知' : '开启桌面通知'" @click="toggleNotif">
       <svg v-if="notifOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
-    <button class="btn danger" @click="showClear = true" title="删除服务端全部短信记录">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      清空数据
     </button>
   </section>
 
@@ -215,6 +226,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250619"></script>
+<script type="module" src="/static/app.js?v=20250620"></script>
 </body>
 </html>

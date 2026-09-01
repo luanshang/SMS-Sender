@@ -112,6 +112,7 @@ createApp({
 
     /* ===== UI 状态 ===== */
     const showClear = ref(false);
+    const settingsOpen = ref(false);
     const clearing = ref(false);
     const deletingId = ref(null);
     const copiedId = ref(null);
@@ -538,12 +539,18 @@ createApp({
 
     const statsTimer2 = setInterval(fetchStats, 60000);
     const keydownHandler = (event) => {
-      if (event.key === "Escape") closeClearModal();
+      if (event.key === "Escape") {
+        closeClearModal();
+        settingsOpen.value = false;
+      }
     };
+    const outsideClickHandler = () => { settingsOpen.value = false; };
     window.addEventListener("keydown", keydownHandler);
+    window.addEventListener("click", outsideClickHandler);
 
     onBeforeUnmount(() => {
       window.removeEventListener("keydown", keydownHandler);
+      window.removeEventListener("click", outsideClickHandler);
       if (sse) sse.close();
       clearInterval(patchTimer);
       clearInterval(statsTimer2);
@@ -565,7 +572,7 @@ createApp({
       groupList, groupOpen, isGroupOpen, toggleGroup,
       highlight, copyText, copiedId,
       askDelete, deletingId,
-      showClear, clearing, closeClearModal, doClear,
+      showClear, settingsOpen, clearing, closeClearModal, doClear,
       soundOn, notifOn, toggleNotif,
       stats, statCards, topSenders,
       total, toast,
