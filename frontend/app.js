@@ -437,12 +437,11 @@ createApp({
       });
       const map = new Map();
       for (const m of pool) {
-        const number = normalizeReceiverNumber(m.receiver_number);
-        if (!number) continue;
-        const key = number;
+        // 左侧用本机接收号码筛选；右侧只按内部发送方归组，不再显示任何号码标题。
+        const key = String(m.from_number || m.contact_name || `message-${m.id}`);
         let g = map.get(key);
         if (!g) {
-          g = { key, number, list: [] };
+          g = { key, list: [] };
           map.set(key, g);
         }
         g.list.push(m);

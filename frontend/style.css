@@ -153,17 +153,16 @@ input::placeholder { color: var(--muted); opacity: .8; }
 .list > .group { background: transparent; box-shadow: none; border-radius: 0; animation: none; }
 .list > .group .group-head { padding: 12px 8px 13px; border-radius: 14px; box-shadow: none; gap: 12px; }
 .list > .group .group-head:hover { background: var(--hover); box-shadow: none; }
-.receiver-number {
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: .03em;
+.message-group-title {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
   line-height: 1.25;
-  padding: 8px 13px;
-  border-radius: 10px;
-  background: var(--card);
-  box-shadow: var(--raise-sm);
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--card-2);
+  box-shadow: var(--sunken-soft);
 }
 .list > .group .group-head .g-sub {
   flex: 1;
