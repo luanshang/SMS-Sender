@@ -83,8 +83,8 @@ button { border: 0; }
 #app { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 .top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 15px; }
-.logo { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; font-size: 28px; background: var(--grad); color: #fff; box-shadow: var(--raise); animation: floaty 5s ease-in-out infinite; }
-.logo svg { width: 31px; height: 31px; display: block; }
+.logo { width: 38px; height: 38px; display: grid; place-items: center; color: var(--text); background: transparent; box-shadow: none; animation: none; }
+.logo svg { width: 34px; height: 34px; display: block; }
 @keyframes floaty { 50% { transform: translateY(-4px); } }
 h1 { font-size: clamp(22px,3.4vw,30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 h1 small { -webkit-text-fill-color: var(--muted); background: none; font-weight: 500; font-size: 13px; margin-left: 9px; letter-spacing: 0; }
@@ -333,6 +333,6 @@ input::placeholder { color: var(--muted); opacity: .8; }
   .stat { padding: 9px 11px; gap: 7px; }
   .stat-val { font-size: 18px; }
   .msg-top time { margin-left: 0; width: 100%; }
-  .logo { width: 48px; height: 48px; font-size: 24px; }
+  .logo { width: 38px; height: 38px; }
   h1 { font-size: 21px; }
 }
