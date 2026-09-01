@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250613" />
+<link rel="stylesheet" href="/static/style.css?v=20250614" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -114,14 +114,8 @@
 
         <section v-for="g in groupList" :key="g.key" class="group">
           <header class="group-head" @click="toggleGroup(g.key)">
-            <div class="avatar" :style="{ background: g.color }">{{ g.initial }}</div>
-            <div class="g-meta">
-              <div class="g-name">
-                <code v-if="g.number" class="g-num">{{ g.number }}</code>
-                <span v-if="g.contact_name" class="g-cn">{{ g.contact_name }}</span>
-              </div>
-              <div class="g-sub">{{ g.count }} 条 · {{ g.lastTime || '未知时间' }}</div>
-            </div>
+            <div class="receiver-number">{{ g.number }}</div>
+            <div class="g-sub">{{ g.count }} 条 · {{ g.lastTime || '未知时间' }}</div>
             <span class="chev" :class="{ open: isGroupOpen(g.key) }">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </span>
@@ -188,6 +182,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250613"></script>
+<script type="module" src="/static/app.js?v=20250614"></script>
 </body>
 </html>

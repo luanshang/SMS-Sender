@@ -151,8 +151,28 @@ input::placeholder { color: var(--muted); opacity: .8; }
 
 /* 右侧内容扁平融入背景 */
 .list > .group { background: transparent; box-shadow: none; border-radius: 0; animation: none; }
-.list > .group .group-head { padding: 12px 4px 11px; border-radius: 12px; box-shadow: none; }
+.list > .group .group-head { padding: 12px 8px 13px; border-radius: 14px; box-shadow: none; gap: 12px; }
 .list > .group .group-head:hover { background: var(--hover); box-shadow: none; }
+.receiver-number {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  line-height: 1.25;
+  padding: 8px 13px;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--raise-sm);
+}
+.list > .group .group-head .g-sub {
+  flex: 1;
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.list > .group .group-head .chev { margin-left: auto; }
+
 .list > .group .messages { margin: 0 0 18px; padding: 4px 0 8px; background: transparent; box-shadow: none; border-top: 1px solid color-mix(in srgb,var(--muted) 15%,transparent); }
 .list > .group .msg { background: color-mix(in srgb,var(--card) 58%,transparent); box-shadow: none; border-radius: 12px; }
 .list > .group .msg:hover { transform: none; box-shadow: none; background: var(--card); }
