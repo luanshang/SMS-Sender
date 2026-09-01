@@ -420,6 +420,14 @@ createApp({
       selectedNumber.value = number || "";
     }
 
+    function isGroupOpen(key) {
+      return groupOpen[key] === true;
+    }
+
+    function toggleGroup(key) {
+      groupOpen[key] = !isGroupOpen(key);
+    }
+
     const groupList = computed(() => {
       const kw = filterKw.value.trim().toLowerCase();
       const pool = messages.value.filter((m) => {
@@ -480,7 +488,7 @@ createApp({
       connText, connOn, refreshAll,
       filterKw, selectedNumber, numberList, selectNumber,
       loading, loadingMore, hasMore, loadMore,
-      groupList, groupOpen,
+      groupList, groupOpen, isGroupOpen, toggleGroup,
       highlight, copyText, copiedId,
       askDelete, deletingId,
       showClear, clearing, doClear,
