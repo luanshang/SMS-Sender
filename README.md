@@ -54,12 +54,15 @@ docker compose up -d --build
   "content": "{{SMS}}",
   "sim_slot": "{{CARD_SLOT}}",
   "device_name": "{{DEVICE_NAME}}",
+  "receiver_number": "18473197857",
   "receive_time": "{{RECEIVE_TIME}}",
   "timestamp": "[timestamp]",
   "sign": "[sign]"
 }
 ```
 
+> `receiver_number` 是本机接收短信的 SIM 卡号码，请在每台设备的 JSON 中填写实际号码（例如 `18473197857`）。
+> `{{FROM}}` 是短信发送方号码（例如 `10086`），不是本机号码。
 > 双花括号 `{{...}}` 是 App 内置标签（`{{SMS}}`、`{{FROM}}`、`{{RECEIVE_TIME}}`、`{{CARD_SLOT}}`
 > `{{DEVICE_NAME}}`、`{{CONTACT_NAME}}`、`{{PHONE_AREA}}`、`{{LOCATION}}` 等）；
 > `[timestamp]`、`[sign]` 是方括号占位符，**仅在填写了加密密钥时才会被替换**，所以密钥必填。

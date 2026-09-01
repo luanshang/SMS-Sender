@@ -407,7 +407,7 @@ createApp({
     const numberList = computed(() => {
       const map = new Map();
       for (const m of messages.value) {
-        const number = String(m.from_number || "").trim();
+        const number = String(m.receiver_number || "").trim();
         if (!number || !m.code) continue;
         const current = map.get(number);
         if (!current || (Number(m.id) || 0) > current.lastId) {
@@ -426,7 +426,7 @@ createApp({
     const groupList = computed(() => {
       const kw = filterKw.value.trim().toLowerCase();
       const pool = messages.value.filter((m) => {
-        const numberMatch = !selectedNumber.value || String(m.from_number || "").trim() === selectedNumber.value;
+        const numberMatch = !selectedNumber.value || String(m.receiver_number || "").trim() === selectedNumber.value;
         const keywordMatch = !kw || matchKw(m, kw);
         return numberMatch && keywordMatch;
       });

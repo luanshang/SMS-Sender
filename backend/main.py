@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS sms (
     content      TEXT NOT NULL DEFAULT '',
     sim_slot     TEXT NOT NULL DEFAULT '',
     device_name  TEXT NOT NULL DEFAULT '',
+    receiver_number TEXT NOT NULL DEFAULT '',
     receive_time TEXT NOT NULL DEFAULT '',
     code         TEXT NOT NULL DEFAULT '',
     created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
@@ -74,6 +75,9 @@ def init_db() -> None:
     conn = sqlite3.connect(DB_PATH)
     try:
         conn.execute(_SCHEMA)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(sms)").fetchall()}
+        if "receiver_number" not in columns:
+            conn.execute("ALTER TABLE sms ADD COLUMN receiver_number TEXT NOT NULL DEFAULT ''")
         conn.commit()
     finally:
         conn.close()
@@ -250,12 +254,13 @@ def receive(
     content = str(payload.get("content") or payload.get("sms") or payload.get("msg") or "")
     sim_slot = str(payload.get("sim_slot") or payload.get("card_slot") or "")
     device_name = str(payload.get("device_name") or payload.get("device_mark") or "")
+    receiver_number = str(payload.get("receiver_number") or payload.get("receive_number") or "").strip()
     receive_time = str(payload.get("receive_time") or "")
     code = extract_code(content)
 
     new_id = _insert(
-        """INSERT INTO sms (from_number, contact_name, phone_area, content, sim_slot, device_name, receive_time, code)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO sms (from_number, contact_name, phone_area, content, sim_slot, device_name, receiver_number, receive_time, code)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", 
         (
             from_number,
             str(payload.get("contact_name") or ""),
@@ -263,6 +268,7 @@ def receive(
             content,
             sim_slot,
             device_name,
+            receiver_number,
             receive_time,
             code,
         ),
@@ -276,6 +282,7 @@ def receive(
         "content": content,
         "sim_slot": sim_slot,
         "device_name": device_name,
+        "receiver_number": receiver_number,
         "receive_time": receive_time,
         "code": code,
     }
