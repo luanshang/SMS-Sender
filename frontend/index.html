@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250616" />
+<link rel="stylesheet" href="/static/style.css?v=20250617" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -194,19 +194,20 @@
     <span>实时推送：SSE</span> · <span>接收端点 <code>POST /v1/sms/receive</code></span> · <span>共 {{ total ?? '-' }} 条</span>
   </footer>
 
-  <!-- ===== 清空确认 ===== -->
-  <Transition name="fade">
-    <div v-if="showClear" class="mask" @click.self="showClear = false">
-      <div class="modal" role="dialog" aria-label="清空确认">
-        <h3>清空全部数据？</h3>
-        <p>将删除服务端存储的 <b>全部 {{ total ?? 0 }} 条</b> 短信记录，此操作<b>无法恢复</b>，且对所有打开的页面生效。</p>
-        <div class="modal-actions">
-          <button class="btn" @click="showClear = false">取消</button>
-          <button class="btn danger" :disabled="clearing" @click="doClear">{{ clearing ? '清空中…' : '确认清空' }}</button>
-        </div>
+  <!-- ===== 清空确认：只有用户操作后才关闭 ===== -->
+  <div v-if="showClear" class="mask" @click.self="closeClearModal" @keydown.esc="closeClearModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-title" @click.stop>
+      <div class="modal-header">
+        <h3 id="clear-title">清空全部数据？</h3>
+        <button class="modal-close" type="button" aria-label="关闭确认框" :disabled="clearing" @click="closeClearModal">×</button>
+      </div>
+      <p>将删除服务端存储的 <b>全部 {{ total ?? 0 }} 条</b> 短信记录，此操作<b>无法恢复</b>，且对所有打开的页面生效。</p>
+      <div class="modal-actions">
+        <button class="btn" type="button" :disabled="clearing" @click="closeClearModal">取消</button>
+        <button class="btn danger" type="button" :disabled="clearing" @click="doClear">{{ clearing ? '清空中…' : '确认清空' }}</button>
       </div>
     </div>
-  </Transition>
+  </div>
 
   <!-- ===== Toast ===== -->
   <Transition name="toast">
@@ -214,6 +215,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250616"></script>
+<script type="module" src="/static/app.js?v=20250617"></script>
 </body>
 </html>

@@ -347,6 +347,10 @@ createApp({
         .catch(() => showToast("删除失败"));
     }
 
+    function closeClearModal() {
+      if (!clearing.value) showClear.value = false;
+    }
+
     function doClear() {
       clearing.value = true;
       api("/api/messages", { method: "DELETE" })
@@ -354,7 +358,7 @@ createApp({
         .catch(() => showToast("清空失败"))
         .finally(() => {
           clearing.value = false;
-          showClear.value = false;
+          closeClearModal();
           loadHistory(true);
         });
     }
@@ -531,8 +535,13 @@ createApp({
     }, 15000);
 
     const statsTimer2 = setInterval(fetchStats, 60000);
+    const keydownHandler = (event) => {
+      if (event.key === "Escape") closeClearModal();
+    };
+    window.addEventListener("keydown", keydownHandler);
 
     onBeforeUnmount(() => {
+      window.removeEventListener("keydown", keydownHandler);
       if (sse) sse.close();
       clearInterval(patchTimer);
       clearInterval(statsTimer2);
@@ -554,7 +563,7 @@ createApp({
       groupList, groupOpen, isGroupOpen, toggleGroup,
       highlight, copyText, copiedId,
       askDelete, deletingId,
-      showClear, clearing, doClear,
+      showClear, clearing, closeClearModal, doClear,
       soundOn, notifOn, toggleNotif,
       stats, statCards, topSenders,
       total, toast,
