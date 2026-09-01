@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250606" />
+<link rel="stylesheet" href="/static/style.css?v=20250609" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -44,10 +44,10 @@
       <div class="stat-label">{{ sc.label }}</div>
     </div>
   </section>
-  <div v-if="stats && stats.senders && stats.senders.length" class="chips">
+  <div v-if="topSenders.length" class="chips">
     <span class="chips-label">热门发件人</span>
-    <button v-for="(s, i) in topSenders" :key="s.from_number + '-' + i" class="chip" :title="'筛选：' + (s.from_number || s.contact_name || '未知')" @click="filterKw = s.from_number || s.contact_name">
-      {{ s.contact_name || s.from_number || '未知' }} <b>{{ s.count }}</b>
+    <button v-for="(s, i) in topSenders" :key="s.from_number + '-' + i" class="chip" :title="'筛选：' + s.from_number" @click="selectNumber(s.from_number)">
+      {{ s.from_number }} <b>{{ s.count }}</b>
     </button>
   </div>
 
@@ -74,70 +74,104 @@
     </button>
   </section>
 
-  <!-- ===== 消息列表 ===== -->
-  <main class="list">
-    <div v-if="loading" class="empty">
-      <div class="big">⏳</div>
-      <p class="hint">正在加载历史消息…</p>
-    </div>
+  <!-- ===== 左侧号码栏 + 右侧验证码内容区 ===== -->
+  <div class="workspace">
+    <aside class="number-sidebar" aria-label="接收号码列表">
+      <div class="sidebar-heading">
+        <div>
+          <span class="eyebrow">INBOX</span>
+          <h2>接收号码</h2>
+        </div>
+        <span class="sidebar-count">{{ numberList.length }}</span>
+      </div>
+      <button class="number-item all" :class="{ selected: !selectedNumber }" @click="selectNumber('')">
+        <span class="number-mark">ALL</span>
+        <span class="number-text">全部消息</span>
+        <span class="number-count">{{ total ?? 0 }}</span>
+      </button>
+      <div class="number-list" v-if="numberList.length">
+        <button v-for="n in numberList" :key="n.number" class="number-item" :class="{ selected: selectedNumber === n.number }" @click="selectNumber(n.number)">
+          <span class="number-mark">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></svg>
+          </span>
+          <span class="number-text">{{ n.number }}</span>
+          <span class="number-count">{{ n.count }}</span>
+        </button>
+      </div>
+      <div v-else class="sidebar-empty">暂无号码</div>
+    </aside>
 
-    <template v-else>
-      <div v-if="groupList.length === 0" class="empty">
-        <div class="big">{{ total > 0 ? '🔎' : '📭' }}</div>
-        <p><b>{{ total > 0 ? '没有匹配的消息' : '还没有收到短信' }}</b></p>
-        <p class="hint">{{ total > 0 ? '换个关键词试试' : '等待 SmsForwarder 推送…（POST /v1/sms/receive）' }}</p>
+    <main class="list">
+      <div class="content-heading">
+        <div>
+          <span class="eyebrow">MESSAGES</span>
+          <h2>{{ selectedNumber || '全部验证码' }}</h2>
+        </div>
+        <span class="result-count">{{ groupList.length ? '已分组' : '暂无内容' }}</span>
+      </div>
+      <div v-if="loading" class="empty">
+        <div class="big">⏳</div>
+        <p class="hint">正在加载历史消息…</p>
       </div>
 
-      <section v-for="g in groupList" :key="g.key" class="group">
-        <header class="group-head" @click="groupOpen[g.key] = !(groupOpen[g.key] ?? false)">
-          <div class="avatar" :style="{ background: g.color }">{{ g.initial }}</div>
-          <div class="g-meta">
-            <div class="g-name">
-              <code v-if="g.number" class="g-num">{{ g.number }}</code>
-              <span v-if="g.contact_name" class="g-cn">{{ g.contact_name }}</span>
+      <template v-else>
+        <div v-if="groupList.length === 0" class="empty">
+          <div class="big">{{ total > 0 ? '🔎' : '📭' }}</div>
+          <p><b>{{ total > 0 ? '没有匹配的消息' : '还没有收到短信' }}</b></p>
+          <p class="hint">{{ total > 0 ? '换个关键词试试' : '等待 SmsForwarder 推送…（POST /v1/sms/receive）' }}</p>
+        </div>
+
+        <section v-for="g in groupList" :key="g.key" class="group">
+          <header class="group-head" @click="groupOpen[g.key] = !(groupOpen[g.key] ?? false)">
+            <div class="avatar" :style="{ background: g.color }">{{ g.initial }}</div>
+            <div class="g-meta">
+              <div class="g-name">
+                <code v-if="g.number" class="g-num">{{ g.number }}</code>
+                <span v-if="g.contact_name" class="g-cn">{{ g.contact_name }}</span>
+              </div>
+              <div class="g-sub">{{ g.count }} 条 · {{ g.lastTime || '未知时间' }}</div>
             </div>
-            <div class="g-sub">{{ g.count }} 条 · {{ g.lastTime || '未知时间' }}</div>
-          </div>
-          <span class="chev" :class="{ open: (groupOpen[g.key] ?? false) }">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-        </header>
+            <span class="chev" :class="{ open: (groupOpen[g.key] ?? false) }">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </header>
 
-        <Transition name="expand">
-          <div v-if="groupOpen[g.key] ?? false" class="messages">
-            <TransitionGroup name="msg">
-              <article v-for="m in g.list" :key="m.id" class="msg">
-                <div class="msg-top">
-                  <div class="badges">
-                    <span v-if="m.code" class="badge code">🔑 {{ m.code }}</span>
-                    <span v-if="m.sim_slot" class="badge">📶 {{ m.sim_slot }}</span>
-                    <span v-if="m.phone_area" class="badge">📍 {{ m.phone_area }}</span>
-                    <span v-if="m.device_name" class="badge">📱 {{ m.device_name }}</span>
+          <Transition name="expand">
+            <div v-if="groupOpen[g.key] ?? false" class="messages">
+              <TransitionGroup name="msg">
+                <article v-for="m in g.list" :key="m.id" class="msg">
+                  <div class="msg-top">
+                    <div class="badges">
+                      <span v-if="m.code" class="badge code">🔑 {{ m.code }}</span>
+                      <span v-if="m.sim_slot" class="badge">📶 {{ m.sim_slot }}</span>
+                      <span v-if="m.phone_area" class="badge">📍 {{ m.phone_area }}</span>
+                      <span v-if="m.device_name" class="badge">📱 {{ m.device_name }}</span>
+                    </div>
+                    <time>{{ m.receive_time || m.created_at || '' }}</time>
                   </div>
-                  <time>{{ m.receive_time || m.created_at || '' }}</time>
-                </div>
-                <p class="msg-content" v-html="highlight(m.content, m.code)"></p>
-                <div class="msg-actions">
-                  <button v-if="m.code" class="btn mini copy" @click="copyText(m.code, m.id)">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    {{ copiedId === m.id ? '已复制 ✓' : '复制验证码' }}
-                  </button>
-                  <button class="btn mini del" :class="{ confirm: deletingId === m.id }" @click="askDelete(m)">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    {{ deletingId === m.id ? '确认删除？' : '删除' }}
-                  </button>
-                </div>
-              </article>
-            </TransitionGroup>
-          </div>
-        </Transition>
-      </section>
+                  <p class="msg-content" v-html="highlight(m.content, m.code)"></p>
+                  <div class="msg-actions">
+                    <button v-if="m.code" class="btn mini copy" @click="copyText(m.code, m.id)">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      {{ copiedId === m.id ? '已复制 ✓' : '复制验证码' }}
+                    </button>
+                    <button class="btn mini del" :class="{ confirm: deletingId === m.id }" @click="askDelete(m)">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      {{ deletingId === m.id ? '确认删除？' : '删除' }}
+                    </button>
+                  </div>
+                </article>
+              </TransitionGroup>
+            </div>
+          </Transition>
+        </section>
 
-      <button v-if="hasMore" class="load-more" :disabled="loadingMore" @click="loadMore">
-        {{ loadingMore ? '加载中…' : '加载更早的消息（共 ' + total + ' 条）' }}
-      </button>
-    </template>
-  </main>
+        <button v-if="hasMore" class="load-more" :disabled="loadingMore" @click="loadMore">
+          {{ loadingMore ? '加载中…' : '加载更早的消息（共 ' + total + ' 条）' }}
+        </button>
+      </template>
+    </main>
+  </div>
 
   <footer class="foot">
     <span>实时推送：SSE</span> · <span>接收端点 <code>POST /v1/sms/receive</code></span> · <span>共 {{ total ?? '-' }} 条</span>
@@ -163,6 +197,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250606"></script>
+<script type="module" src="/static/app.js?v=20250609"></script>
 </body>
 </html>

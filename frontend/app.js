@@ -98,6 +98,7 @@ createApp({
     const hasMore = ref(false);
     const lastId = ref(0);
     const filterKw = ref("");
+    const selectedNumber = ref("");
     const connText = ref("连接中…");
     const connOn = ref(false);
     const groupOpen = reactive({});
@@ -398,11 +399,37 @@ createApp({
       { icon: STAT_ICONS.code, label: "验证码", value: formatNum(stats.value?.code_count), color: "var(--mark-text)" },
     ]);
 
-    const topSenders = computed(() => (stats.value?.senders || []).slice(0, 6));
+    const topSenders = computed(() => (stats.value?.senders || [])
+      .filter((s) => String(s.from_number || "").trim())
+      .slice(0, 6));
+
+    /* 左侧号码栏：只收集真实存在的手机号，不生成任何未知号码占位项 */
+    const numberList = computed(() => {
+      const map = new Map();
+      for (const m of messages.value) {
+        const number = String(m.from_number || "").trim();
+        if (!number || !m.code) continue;
+        const current = map.get(number);
+        if (!current || (Number(m.id) || 0) > current.lastId) {
+          map.set(number, { number, lastId: Number(m.id) || 0 });
+        }
+        const item = map.get(number);
+        item.count = (item.count || 0) + 1;
+      }
+      return [...map.values()].sort((a, b) => b.lastId - a.lastId);
+    });
+
+    function selectNumber(number) {
+      selectedNumber.value = number || "";
+    }
 
     const groupList = computed(() => {
       const kw = filterKw.value.trim().toLowerCase();
-      const pool = kw ? messages.value.filter((m) => matchKw(m, kw)) : messages.value;
+      const pool = messages.value.filter((m) => {
+        const numberMatch = !selectedNumber.value || String(m.from_number || "").trim() === selectedNumber.value;
+        const keywordMatch = !kw || matchKw(m, kw);
+        return numberMatch && keywordMatch;
+      });
       const map = new Map();
       for (const m of pool) {
         const key = m.from_number || m.contact_name || "unknown";
@@ -454,7 +481,7 @@ createApp({
       theme, toggleTheme,
       tokenInput, onTokenChange,
       connText, connOn, refreshAll,
-      filterKw,
+      filterKw, selectedNumber, numberList, selectNumber,
       loading, loadingMore, hasMore, loadMore,
       groupList, groupOpen,
       highlight, copyText, copiedId,
