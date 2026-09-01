@@ -8,6 +8,7 @@
  * ============================================================ */
 
 const VUE_CDNS = [
+  "/static/vue.esm-browser.prod.js",
   "https://cdn.jsdelivr.net/npm/vue@3.4.29/dist/vue.esm-browser.prod.js",
   "https://registry.npmmirror.com/vue/3.4.29/files/dist/vue.esm-browser.prod.js",
   "https://unpkg.com/vue@3.4.29/dist/vue.esm-browser.prod.js",
