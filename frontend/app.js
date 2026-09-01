@@ -1,36 +1,26 @@
 /* ============================================================
  * SMS Board · 短信接收面板（Vue 3 · 零构建）
  * ------------------------------------------------------------
- * - Vue 由多 CDN 依次尝试加载（jsdelivr → npmmirror → unpkg），
- *   适配国内外网络环境；全部失败时给出友好提示。
+ * - Vue 固定从 Docker 提供的本地静态文件加载，不依赖外部 CDN，
+ *   避免网络限制导致页面黑屏。
  * - 数据源：GET /api/messages（历史） / GET /api/stats（统计）
  *           /api/stream（SSE 实时） / DELETE /api/messages[...]
  * ============================================================ */
 
-const VUE_CDNS = [
-  "/static/vue.esm-browser.prod.js",
-  "https://cdn.jsdelivr.net/npm/vue@3.4.29/dist/vue.esm-browser.prod.js",
-  "https://registry.npmmirror.com/vue/3.4.29/files/dist/vue.esm-browser.prod.js",
-  "https://unpkg.com/vue@3.4.29/dist/vue.esm-browser.prod.js",
-];
-
+/* Vue 固定从 Docker 本地静态目录加载，不再请求任何外部 CDN。 */
 let Vue = null;
-for (const url of VUE_CDNS) {
-  try {
-    Vue = await import(url);
-    break;
-  } catch (e) {
-    console.warn("[SMS Board] Vue CDN 加载失败:", url, e);
-  }
-}
-if (!Vue) {
+try {
+  Vue = await import("/static/vue.esm-browser.prod.js");
+} catch (e) {
+  console.error("[SMS Board] 本地 Vue 运行库加载失败:", e);
   const appEl = document.getElementById("app");
   if (appEl) {
     appEl.innerHTML =
-      '<div class="empty"><div class="big">🌐</div><p><b>无法加载 Vue 运行库</b></p>' +
-      '<p class="hint">服务器无法访问 jsdelivr / npmmirror CDN，请检查服务器外网连通性。</p></div>';
+      '<div class="empty"><div class="big">⚠️</div><p><b>无法加载本地 Vue 运行库</b></p>' +
+      '<p class="hint">请确认 Docker 镜像包含 frontend/vue.esm-browser.prod.js，并重新构建。</p></div>';
+    appEl.removeAttribute("v-cloak");
   }
-  throw new Error("Vue unavailable");
+  throw new Error("Local Vue unavailable");
 }
 
 const { createApp, ref, reactive, computed, watch, onBeforeUnmount } = Vue;
