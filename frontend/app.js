@@ -65,6 +65,12 @@ function formatNum(n) {
   return n === undefined || n === null ? "–" : String(n);
 }
 
+/* 只保留中国大陆 11 位手机号，避免把“未知号码”等附加文字带进标题 */
+function normalizeReceiverNumber(value) {
+  const match = String(value || "").match(/1\d{10}/);
+  return match ? match[0] : "";
+}
+
 /* ---------- 应用 ---------- */
 createApp({
   setup() {
@@ -407,7 +413,7 @@ createApp({
     const numberList = computed(() => {
       const map = new Map();
       for (const m of messages.value) {
-        const number = String(m.receiver_number || "").trim();
+        const number = normalizeReceiverNumber(m.receiver_number);
         if (!number || !m.code) continue;
         const current = map.get(number);
         if (!current || (Number(m.id) || 0) > current.lastId) {
@@ -426,7 +432,7 @@ createApp({
     const groupList = computed(() => {
       const kw = filterKw.value.trim().toLowerCase();
       const pool = messages.value.filter((m) => {
-        const numberMatch = !selectedNumber.value || String(m.receiver_number || "").trim() === selectedNumber.value;
+        const numberMatch = !selectedNumber.value || normalizeReceiverNumber(m.receiver_number) === selectedNumber.value;
         const keywordMatch = !kw || matchKw(m, kw);
         return numberMatch && keywordMatch;
       });

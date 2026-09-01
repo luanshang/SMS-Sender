@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SMS Board · 短信接收面板</title>
-<link rel="stylesheet" href="/static/style.css?v=20250610" />
+<link rel="stylesheet" href="/static/style.css?v=20250611" />
 <!-- 首屏前确定主题（默认浅色，遵循上次选择） -->
 <script>
 (function () {
@@ -84,18 +84,9 @@
         </div>
         <span class="sidebar-count">{{ numberList.length }}</span>
       </div>
-      <button class="number-item all" :class="{ selected: !selectedNumber }" @click="selectNumber('')">
-        <span class="number-mark">ALL</span>
-        <span class="number-text">全部消息</span>
-        <span class="number-count">{{ total ?? 0 }}</span>
-      </button>
       <div class="number-list" v-if="numberList.length">
-        <button v-for="n in numberList" :key="n.number" class="number-item" :class="{ selected: selectedNumber === n.number }" @click="selectNumber(n.number)">
-          <span class="number-mark">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></svg>
-          </span>
+        <button v-for="n in numberList" :key="n.number" class="number-item" :class="{ selected: selectedNumber === n.number }" @click="selectNumber(n.number)" :aria-label="'查看 ' + n.number + ' 收到的验证码">
           <span class="number-text">{{ n.number }}</span>
-          <span class="number-count">{{ n.count }}</span>
         </button>
       </div>
       <div v-else class="sidebar-empty">暂无号码</div>
@@ -197,6 +188,6 @@
   </Transition>
 </div>
 
-<script type="module" src="/static/app.js?v=20250610"></script>
+<script type="module" src="/static/app.js?v=20250611"></script>
 </body>
 </html>
